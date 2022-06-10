@@ -30,7 +30,7 @@ namespace AwsCdkEcrEcs
                     PipelineName = Constants.CODE_PIPELINE,
                     Synth = new ShellStep("Synth", new ShellStepProps
                     {
-                        Input = CodePipelineSource.CodeCommit(repo, Constants.CODE_COMMIT_REPO_NAME),
+                        Input = CodePipelineSource.CodeCommit(repo, Constants.CODE_COMMIT_BRANCH_NAME),
                         Commands = new string[] {
                                                 "npm install -g aws-cdk",                                                
                                                 "cdk synth RandomNameStack"
