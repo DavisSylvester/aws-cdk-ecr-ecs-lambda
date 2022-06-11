@@ -16,10 +16,17 @@ namespace AwsCdkEcrEcs
                         RepositoryName = Constants.CODE_COMMIT_REPO_NAME
                     });
 
-            var ecrRepo = new Amazon.CDK.AWS.ECR.Repository(this,
-                            Constants.ECR_RepoName_ID, new Amazon.CDK.AWS.ECR.RepositoryProps() {
-                                RepositoryName = Constants.ECR_RepoName
-                            });
+            var cdkRepo = new Amazon.CDK.AWS.CodeCommit.Repository(this,
+                    Constants.CODE_COMMIT_CDK_REPO_ID, new Amazon.CDK.AWS.CodeCommit.RepositoryProps
+                    {
+                        RepositoryName = Constants.CODE_COMMIT_CDK_REPO_NAME,
+                        Description = "aws-cdk-ecr-ecs cdk project",                        
+                    });
+
+            // var ecrRepo = new Amazon.CDK.AWS.ECR.Repository(this,
+            //                 Constants.ECR_RepoName_ID, new Amazon.CDK.AWS.ECR.RepositoryProps() {
+            //                     RepositoryName = Constants.ECR_RepoName
+            //                 });
 
             var myCustomPolicy = new PolicyStatement(new PolicyStatementProps {
                 Actions = new [] { 
@@ -61,7 +68,7 @@ namespace AwsCdkEcrEcs
                 Description = "Role to run EC2 Instance and connect to ECR",
                 AssumedBy = new CompositePrincipal(
                                 new ServicePrincipal("ecs.amazonaws.com"),
-                                new AccountPrincipal("ecs-tasks.amazonaws.com"))
+                                new ServicePrincipal("ecs-tasks.amazonaws.com"))
                 
             });
 
