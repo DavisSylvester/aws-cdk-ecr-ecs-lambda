@@ -2,9 +2,12 @@ using System;
 using Amazon.CDK;
 using Amazon.CDK.AWS.EC2;
 using Amazon.CDK.AWS.ECS;
+using Amazon.CDK.AWS.Lambda;
 using Amazon.CDK.AWS.ECS.Patterns;
 using Amazon.CDK.Pipelines;
 using Constructs;
+using Amazon.CDK.AWS.S3;
+using Amazon.CDK.AWS.APIGateway;
 
 namespace AwsCdkEcrEcs
 {
@@ -77,7 +80,45 @@ namespace AwsCdkEcrEcs
                 ServiceName = "random-profile-service",
                 AssignPublicIp = true,
                            
-            }); ;
+            });
+
+            taskDef.DefaultContainer.AddEnvironment("alb", ecs.LoadBalancer.LoadBalancerDnsName);
+
+
+            // Give permission to S3.
+			IBucket bucket = new Bucket(this, "profile-contacts", new BucketProps {
+				BucketName = "profile-contacts"
+			});
+
+			// NOTE: For local testing, use 'Debug', otherwise use 'Release'.
+			Function RandomSalaryGeneratorFunction = new Function(this, "RandomSalaryGenerator", new FunctionProps
+            {
+                Runtime = Runtime.DOTNET_6,
+                Code = Code.FromAsset("./src/Lambda/src/RandomSalaryGenerator/bin/RELEASE/net6.0/RandomSalaryGenerator.dll"),
+                Handler = "Lambdas::Lambda::Run",
+				Timeout = Duration.Seconds(15),
+				MemorySize = 128
+            });
+
+			// Add environment property to Lambda.
+			RandomSalaryGeneratorFunction.AddEnvironment("profile-contacts-bucket", "profile-contacts");
+			
+			bucket.GrantReadWrite(RandomSalaryGeneratorFunction);
+
+			LambdaRestApi api = new LambdaRestApi(this, "RandomSalaryGeneratorAPI", 
+                new LambdaRestApiProps
+			{
+				Handler = RandomSalaryGeneratorFunction,
+				Proxy = false
+			});
+			
+
+			var contactAPI = api.Root.AddResource("contact-api");
+			
+            LambdaIntegration lambdaProxyIntegrationRandomSalary = new LambdaIntegration(RandomSalaryGeneratorFunction);
+
+            contactAPI.AddMethod("GET", lambdaProxyIntegrationRandomSalary);
+
         }
     }
 }
